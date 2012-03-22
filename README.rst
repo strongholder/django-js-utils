@@ -22,7 +22,7 @@ A management command js_urls to generate a list of all of your Django urls
 
 Installation
 ************
-1. Install package using pip:
+1. Install package using pip::
 
     pip install -e hg+https://github.com/Dimitri-Gnidash/django-js-utils.git#egg=django-js-utils
 
