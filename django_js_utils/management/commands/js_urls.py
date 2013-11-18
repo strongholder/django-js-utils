@@ -1,13 +1,13 @@
 import sys
 import re
+from django.core.exceptions import ImproperlyConfigured
 
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
 from django.core.management.base import BaseCommand
 from django.utils import simplejson
 from django.utils.datastructures import SortedDict
-from django.conf import settings as project_settings
+from django.conf import settings
 
-from django_js_utils import settings as app_settings
 
 
 RE_KWARG = re.compile(r"(\(\?P\<(.*?)\>.*?\))") #Pattern for recongnizing named parameters in urls
@@ -19,14 +19,19 @@ class Command(BaseCommand):
         """
         Create urls.js file by parsing all of the urlpatterns in the root urls.py file
         """
+        try:
+            URLS_JS_GENERATED_FILE = getattr(settings, 'URLS_JS_GENERATED_FILE')
+        except:
+            raise ImproperlyConfigured('You should provide URLS_JS_GENERATED_FILE setting.')
+
         js_patterns = SortedDict()
-        print "Generating Javascript urls file %s" % app_settings.URLS_JS_GENERATED_FILE
-        Command.handle_url_module(js_patterns, project_settings.ROOT_URLCONF)
+        print "Generating Javascript urls file %s" % URLS_JS_GENERATED_FILE
+        Command.handle_url_module(js_patterns, settings.ROOT_URLCONF)
         #output to the file
-        urls_file = open(app_settings.URLS_JS_GENERATED_FILE, "w")
+        urls_file = open(URLS_JS_GENERATED_FILE, "w")
         urls_file.write("dutils.conf.urls = ")
         simplejson.dump(js_patterns, urls_file)
-        print "Done generating Javascript urls file %s" % app_settings.URLS_JS_GENERATED_FILE
+        print "Done generating Javascript urls file %s" % URLS_JS_GENERATED_FILE
     
     @staticmethod
     def handle_url_module(js_patterns, module_name, prefix=""):
