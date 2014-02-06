@@ -34,7 +34,7 @@ class Command(BaseCommand):
         print "Done generating Javascript urls file %s" % URLS_JS_GENERATED_FILE
     
     @staticmethod
-    def handle_url_module(js_patterns, module_name, prefix=""):
+    def handle_url_module(js_patterns, module_name, prefix="", namespace=None):
         """
         Load the module and output all of the patterns
         Recurse on the included modules
@@ -46,6 +46,9 @@ class Command(BaseCommand):
         else:
             root_urls = module_name
             patterns = root_urls
+
+        if not hasattr(patterns, "__iter__"):
+            patterns = patterns.urlpatterns
 
         for pattern in patterns:
             if issubclass(pattern.__class__, RegexURLPattern):
@@ -64,7 +67,17 @@ class Command(BaseCommand):
                     if args_matches:
                         for el in args_matches:
                             full_url = full_url.replace(el, "<>")#replace by a empty parameter name
-                    js_patterns[pattern.name] = "/" + full_url
+                    if namespace:
+                        key = namespace + ":" + pattern.name
+                    else:
+                        key = pattern.name
+
+                    js_patterns[key] = "/" + full_url
+
             elif issubclass(pattern.__class__, RegexURLResolver):
-                if pattern.urlconf_name:
-                    Command.handle_url_module(js_patterns, pattern.urlconf_name, prefix=pattern.regex.pattern)
+                if pattern.urlconf_name or pattern.namespace:
+                    kwargs = {}
+                    if pattern.namespace:
+                        kwargs["namespace"] = pattern.namespace
+
+                    Command.handle_url_module(js_patterns, pattern.urlconf_name or pattern.namespace, prefix=pattern.regex.pattern, **kwargs)
